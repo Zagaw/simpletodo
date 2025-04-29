@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+.form{
+    @apply border p-2 mb-2 w-full;
+}
