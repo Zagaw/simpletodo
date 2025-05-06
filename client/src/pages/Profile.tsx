@@ -1,36 +1,43 @@
-import * as z from "zod";
-import { registerSchema } from "../schema/register";
+import { z } from "zod";
+import { profileUpdateSchema } from "../schema/profileUpdate";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRegisterMutation } from "../slices/userApi";
-import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../store";
+import { useProfileUpdateMutation } from "../slices/userApi";
 import { toast } from "react-toastify";
+import { setUserInfo } from "../slices/auths";
 
-type FormInputs = z.infer<typeof registerSchema>;
+type FormInputs = z.infer<typeof profileUpdateSchema>;
 
-function Register() {
+function Profile() {
 
-    const {register, handleSubmit, formState: {errors, isSubmitting}, reset} = useForm<FormInputs>({
-        resolver: zodResolver(registerSchema),
-    });
+    const userInfo = useSelector((state: RootState) => state.auth.userInfo);
+    const [profileUpdate, {isLoading}] = useProfileUpdateMutation();
+    const dispatch = useDispatch();
 
-    const [Register, {isLoading}] = useRegisterMutation();
-    const navigate = useNavigate();
+    const {register, handleSubmit, formState: {errors, isSubmitting}} = useForm<FormInputs>({
+        resolver: zodResolver(profileUpdateSchema),
+        defaultValues: {
+            name: userInfo?.name,
+            email: userInfo?.email,
+            password: "",
+        },
+    })
 
-    const submit: SubmitHandler<FormInputs> = async (data) => {
+    const submit : SubmitHandler<FormInputs> = async (data) => {
         try {
-            await Register(data);
-            reset();
-            toast.success("Register successful.");
-            navigate("/login");
+            const res = await profileUpdate(data);
+            dispatch(setUserInfo(res.data));
+            toast.success("User profile updated.")
         } catch (error : any) {
-            toast.error(error?.data?.message || error.error);
+            toast.error(error?.data.message || error.error);
         }
     }
 
-    return(
+    return (
         <div className="max-w-lg mx-auto mt-20">
-            <h2 className="text-3xl font-bold mb-2">Register</h2>
+            <h2 className="text-3xl font-bold mb-2">Profile</h2>
             <form className="flex flex-col space-y-2" onSubmit={handleSubmit(submit)}>
                 <div>
                     <label className="block mb-1 text-sm text-gray-500" htmlFor="name">Name</label>
@@ -53,10 +60,10 @@ function Register() {
                         <span className="text-red-600 text-sm font-medium">{errors.password.message}</span>
                     )}
                 </div>
-                <button type="submit" className="text-white bg-black border py-2 px-4" disabled={isSubmitting || isLoading}>Register</button>
+                <button type="submit" className="text-white bg-black border py-2 px-4" disabled={isSubmitting || isLoading}>Update Profile</button>
             </form>
         </div>
     )
 }
 
-export default Register;
+export default Profile;

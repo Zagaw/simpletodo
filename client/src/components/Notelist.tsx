@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react"
 import { creatNote, deleteNote, getNotes, updateNote } from "../services/noteservice";
 import { Note } from "../types/note";
+import { useSelector } from "react-redux";
+import { RootState } from "../store";
+import { Link } from "react-router-dom";
 
 const Notelist = () => {
 
@@ -9,6 +12,8 @@ const Notelist = () => {
     const [refresh, setRefresh] = useState<boolean>(false);
     const [editmode, setEditMode] = useState<boolean>(false);
     const [editId, setEditId] = useState("");
+
+    const userInfo = useSelector((state: RootState) => state.auth.userInfo);
 
     const makeRefresh = () => {
         setRefresh(!refresh);
@@ -68,15 +73,29 @@ const Notelist = () => {
                 {
                     notes.map((note, index)=> <li className="flex items-center gap-2 mb-2" key={index}>
                         <p className="font-semibold">{note.title}</p>
-                        <button className="border text-white bg-red-600 font-medium p-2" type="button" onClick={() => deleteExistingNote(note._id)}>Delete</button>
-                        <button className="font-medium border p-2" type="button" onClick={() => handleChangeMode(note._id,note.title)}>Edit</button>
+                        {
+                            note.userId === userInfo?._id && (
+                                <>
+                                    <button className="border text-white bg-red-600 font-medium p-2" type="button" onClick={() => deleteExistingNote(note._id)}>Delete</button>
+                                    <button className="font-medium border p-2" type="button" onClick={() => handleChangeMode(note._id,note.title)}>Edit</button>
+                                </>
+                            )
+                        }
                     </li>)
                 }
             </ul>
-            <form onSubmit={submitHandler}>
-                <input className="border p-2 text-sm mr-2" type="text" value={msg} onChange={(e)=>setMsg(e.target.value)}/>
-                <button className="text-white bg-black px-4 py-2 text-sm">{editmode ? "Update" : "Create"}</button>
-            </form>
+            <>
+                {
+                    userInfo ? <form onSubmit={submitHandler}>
+                                    <input className="border p-2 text-sm mr-2" type="text" value={msg} onChange={(e)=>setMsg(e.target.value)}/>
+                                    <button className="text-white bg-black px-4 py-2 text-sm">{editmode ? "Update" : "Create"}</button>
+                               </form>
+                    : <p className="border-2 px-4 py-2 w-fit">
+                        <Link to={"/login"} className="font-bold underline">Login </Link>
+                        for creating your own shares.
+                    </p>
+                }
+            </>
         </div>
     )
 
